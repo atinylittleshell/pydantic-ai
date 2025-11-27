@@ -54,6 +54,7 @@ with try_import() as imports_successful:
         ElicitRequestParams,
         ElicitResult,
         ImageContent,
+        Implementation,
         TextContent,
     )
 
@@ -1979,6 +1980,93 @@ async def test_instructions(mcp_server: MCPServerStdio) -> None:
         mcp_server.instructions
     async with mcp_server:
         assert mcp_server.instructions == 'Be a helpful assistant.'
+
+
+async def test_client_name_passed_to_session() -> None:
+    """Test that client_name is passed to ClientSession as clientInfo."""
+    server = MCPServerStdio('python', ['-m', 'tests.mcp_server'], client_name='MyCustomClient')
+    
+    with patch.object(ClientSession, '__init__', return_value=None) as mock_init:
+        with patch.object(ClientSession, '__aenter__', new_callable=AsyncMock) as mock_aenter:
+            with patch.object(ClientSession, '__aexit__', new_callable=AsyncMock):
+                with patch.object(ClientSession, 'initialize', new_callable=AsyncMock) as mock_initialize:
+                    # Mock the initialize response
+                    mock_initialize.return_value = AsyncMock(
+                        serverInfo=Implementation(name='test', version='1.0.0'),
+                        capabilities=ServerCapabilities(tools=True),
+                        instructions=None
+                    )
+                    mock_aenter.return_value = AsyncMock(initialize=mock_initialize)
+                    
+                    async with server:
+                        # Check that ClientSession.__init__ was called with client_info
+                        assert mock_init.called
+                        call_kwargs = mock_init.call_args.kwargs
+                        
+                        # Verify client_info was passed
+                        assert 'client_info' in call_kwargs
+                        client_info = call_kwargs['client_info']
+                        assert client_info is not None
+                        assert client_info.name == 'MyCustomClient'
+                        assert client_info.version == '1.0.0'
+
+
+async def test_client_name_and_version_passed_to_session() -> None:
+    """Test that client_name and client_version are passed to ClientSession as clientInfo."""
+    server = MCPServerStdio(
+        'python', ['-m', 'tests.mcp_server'], 
+        client_name='MyCustomClient',
+        client_version='2.5.3'
+    )
+    
+    with patch.object(ClientSession, '__init__', return_value=None) as mock_init:
+        with patch.object(ClientSession, '__aenter__', new_callable=AsyncMock) as mock_aenter:
+            with patch.object(ClientSession, '__aexit__', new_callable=AsyncMock):
+                with patch.object(ClientSession, 'initialize', new_callable=AsyncMock) as mock_initialize:
+                    # Mock the initialize response
+                    mock_initialize.return_value = AsyncMock(
+                        serverInfo=Implementation(name='test', version='1.0.0'),
+                        capabilities=ServerCapabilities(tools=True),
+                        instructions=None
+                    )
+                    mock_aenter.return_value = AsyncMock(initialize=mock_initialize)
+                    
+                    async with server:
+                        # Check that ClientSession.__init__ was called with client_info
+                        assert mock_init.called
+                        call_kwargs = mock_init.call_args.kwargs
+                        
+                        # Verify client_info was passed with custom version
+                        assert 'client_info' in call_kwargs
+                        client_info = call_kwargs['client_info']
+                        assert client_info is not None
+                        assert client_info.name == 'MyCustomClient'
+                        assert client_info.version == '2.5.3'
+
+
+async def test_client_name_not_set() -> None:
+    """Test that when client_name is not set, client_info is None."""
+    server = MCPServerStdio('python', ['-m', 'tests.mcp_server'])
+    
+    with patch.object(ClientSession, '__init__', return_value=None) as mock_init:
+        with patch.object(ClientSession, '__aenter__', new_callable=AsyncMock) as mock_aenter:
+            with patch.object(ClientSession, '__aexit__', new_callable=AsyncMock):
+                with patch.object(ClientSession, 'initialize', new_callable=AsyncMock) as mock_initialize:
+                    # Mock the initialize response
+                    mock_initialize.return_value = AsyncMock(
+                        serverInfo=Implementation(name='test', version='1.0.0'),
+                        capabilities=ServerCapabilities(tools=True),
+                        instructions=None
+                    )
+                    mock_aenter.return_value = AsyncMock(initialize=mock_initialize)
+                    
+                    async with server:
+                        # Check that ClientSession.__init__ was called with client_info=None
+                        assert mock_init.called
+                        call_kwargs = mock_init.call_args.kwargs
+                        
+                        assert 'client_info' in call_kwargs
+                        assert call_kwargs['client_info'] is None
 
 
 async def test_agent_run_stream_with_mcp_server_http(allow_model_requests: None, model: Model):

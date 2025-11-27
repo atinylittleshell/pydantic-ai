@@ -473,6 +473,40 @@ async def main():
    request. Anything supported by **httpx** (`verify`, `cert`, custom
    proxies, timeouts, etc.) therefore applies to all MCP traffic.
 
+## Client Identification
+
+When connecting to an MCP server, you can optionally specify a client name and version that will be sent to the server during initialization. This is useful for:
+
+- Identifying your application in server logs
+- Allowing servers to provide custom behavior based on the client
+- Debugging and monitoring MCP connections
+- Version-specific feature negotiation
+
+All MCP client classes ([`MCPServerStdio`][pydantic_ai.mcp.MCPServerStdio], [`MCPServerStreamableHTTP`][pydantic_ai.mcp.MCPServerStreamableHTTP], and [`MCPServerSSE`][pydantic_ai.mcp.MCPServerSSE]) support the `client_name` and `client_version` parameters:
+
+```python {title="mcp_client_with_name.py"}
+from pydantic_ai import Agent
+from pydantic_ai.mcp import MCPServerStdio
+
+server = MCPServerStdio(
+    'uv',
+    args=['run', 'mcp-run-python', 'stdio'],
+    client_name='MyApplication',  # (1)!
+    client_version='2.1.0',  # (2)!
+)
+agent = Agent('openai:gpt-5', toolsets=[server])
+
+async def main():
+    result = await agent.run('What is 2 + 2?')
+    print(result.output)
+    #> The answer is 4.
+```
+
+1. The `client_name` parameter is sent to the MCP server as part of the `clientInfo` during initialization.
+2. The `client_version` parameter specifies the version string. Defaults to `'1.0.0'` if not provided.
+
+When `client_name` is provided, it's sent to the server as an [Implementation](https://modelcontextprotocol.io/specification/2025-11-25/schema#implementation) object with the specified version (or `'1.0.0'` by default). If `client_name` is not specified, no client information is sent.
+
 ## MCP Sampling
 
 !!! info "What is MCP Sampling?"
