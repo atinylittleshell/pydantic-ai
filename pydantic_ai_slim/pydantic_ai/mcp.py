@@ -625,7 +625,7 @@ class MCPServer(AbstractToolset[Any], ABC):
             if self._running_count == 0:
                 async with AsyncExitStack() as exit_stack:
                     self._read_stream, self._write_stream = await exit_stack.enter_async_context(self.client_streams())
-                    
+
                     # Build client_info if client_name is provided
                     client_info = None
                     if self.client_name:
@@ -633,7 +633,7 @@ class MCPServer(AbstractToolset[Any], ABC):
                             name=self.client_name,
                             version=self.client_version,
                         )
-                    
+
                     client = ClientSession(
                         read_stream=self._read_stream,
                         write_stream=self._write_stream,
