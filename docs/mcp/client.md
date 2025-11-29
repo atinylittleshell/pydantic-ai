@@ -488,11 +488,10 @@ All MCP client classes ([`MCPServerStdio`][pydantic_ai.mcp.MCPServerStdio], [`MC
 from mcp import types as mcp_types
 
 from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServerStdio
+from pydantic_ai.mcp import MCPServerSSE
 
-server = MCPServerStdio(
-    'uv',
-    args=['run', 'mcp-run-python', 'stdio'],
+server = MCPServerSSE(
+    'http://localhost:3001/sse',
     client_info=mcp_types.Implementation(  # (1)!
         name='MyApplication',
         version='2.1.0',
@@ -500,10 +499,11 @@ server = MCPServerStdio(
 )
 agent = Agent('openai:gpt-5', toolsets=[server])
 
+
 async def main():
-    result = await agent.run('What is 2 + 2?')
+    result = await agent.run('How many days between 2000-01-01 and 2025-03-18?')
     print(result.output)
-    #> The answer is 4.
+    #> There are 9,208 days between January 1, 2000, and March 18, 2025.
 ```
 
 1. The `client_info` parameter is sent to the MCP server as part of the `clientInfo` during initialization.
