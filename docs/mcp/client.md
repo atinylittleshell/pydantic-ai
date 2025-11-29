@@ -486,6 +486,7 @@ All MCP client classes ([`MCPServerStdio`][pydantic_ai.mcp.MCPServerStdio], [`MC
 
 ```python {title="mcp_client_with_name.py"}
 from mcp import types as mcp_types
+
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServerStdio
 
