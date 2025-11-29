@@ -1987,8 +1987,8 @@ async def test_client_info_passed_to_session() -> None:
     implementation = Implementation(
         name='MyCustomClient',
         version='2.5.3',
-        description='Custom MCP client',
-        url='https://example.com/client',
+        title='Custom MCP client',
+        websiteUrl='https://example.com/client',
     )
     server = MCPServerStdio('python', ['-m', 'tests.mcp_server'], client_info=implementation)
 
