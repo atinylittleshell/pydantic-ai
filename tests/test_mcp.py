@@ -2010,6 +2010,7 @@ async def test_client_info_not_set() -> None:
         result = await server.direct_call_tool('get_client_info', {})
         # When client_info is not set, the MCP library provides default client info
         assert result is not None
+        assert isinstance(result, dict)
         assert result['name'] == 'mcp'
 
 
