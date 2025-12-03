@@ -96,7 +96,7 @@ async def test_stdio_server(run_context: RunContext[int]):
     server = MCPServerStdio('python', ['-m', 'tests.mcp_server'])
     async with server:
         tools = [tool.tool_def for tool in (await server.get_tools(run_context)).values()]
-        assert len(tools) == snapshot(18)
+        assert len(tools) == snapshot(19)
         assert tools[0].name == 'celsius_to_fahrenheit'
         assert isinstance(tools[0].description, str)
         assert tools[0].description.startswith('Convert Celsius to Fahrenheit.')
@@ -157,7 +157,7 @@ async def test_stdio_server_with_cwd(run_context: RunContext[int]):
     server = MCPServerStdio('python', ['mcp_server.py'], cwd=test_dir)
     async with server:
         tools = await server.get_tools(run_context)
-        assert len(tools) == snapshot(18)
+        assert len(tools) == snapshot(19)
 
 
 async def test_process_tool_call(run_context: RunContext[int]) -> int:
@@ -1992,48 +1992,25 @@ async def test_client_info_passed_to_session() -> None:
     )
     server = MCPServerStdio('python', ['-m', 'tests.mcp_server'], client_info=implementation)
 
-    with patch.object(ClientSession, '__init__', return_value=None) as mock_init:
-        with patch.object(ClientSession, '__aenter__', new_callable=AsyncMock) as mock_aenter:
-            with patch.object(ClientSession, '__aexit__', new_callable=AsyncMock):
-                with patch.object(ClientSession, 'initialize', new_callable=AsyncMock) as mock_initialize:
-                    # Mock the initialize response
-                    mock_initialize.return_value = AsyncMock(
-                        serverInfo=Implementation(name='test', version='1.0.0'),
-                        capabilities=ServerCapabilities(tools=True),
-                        instructions=None,
-                    )
-                    mock_aenter.return_value = AsyncMock(initialize=mock_initialize)
-
-                    async with server:
-                        assert mock_init.called
-                        call_kwargs = mock_init.call_args.kwargs
-
-                        assert 'client_info' in call_kwargs
-                        assert call_kwargs['client_info'] is implementation
+    async with server:
+        result = await server.direct_call_tool('get_client_info', {})
+        assert result == {
+            'name': 'MyCustomClient',
+            'version': '2.5.3',
+            'title': 'Custom MCP client',
+            'websiteUrl': 'https://example.com/client',
+        }
 
 
 async def test_client_info_not_set() -> None:
-    """Test that when client_info is not set, None is passed through."""
+    """Test that when client_info is not set, the default MCP client info is used."""
     server = MCPServerStdio('python', ['-m', 'tests.mcp_server'])
 
-    with patch.object(ClientSession, '__init__', return_value=None) as mock_init:
-        with patch.object(ClientSession, '__aenter__', new_callable=AsyncMock) as mock_aenter:
-            with patch.object(ClientSession, '__aexit__', new_callable=AsyncMock):
-                with patch.object(ClientSession, 'initialize', new_callable=AsyncMock) as mock_initialize:
-                    # Mock the initialize response
-                    mock_initialize.return_value = AsyncMock(
-                        serverInfo=Implementation(name='test', version='1.0.0'),
-                        capabilities=ServerCapabilities(tools=True),
-                        instructions=None,
-                    )
-                    mock_aenter.return_value = AsyncMock(initialize=mock_initialize)
-
-                    async with server:
-                        assert mock_init.called
-                        call_kwargs = mock_init.call_args.kwargs
-
-                        assert 'client_info' in call_kwargs
-                        assert call_kwargs['client_info'] is None
+    async with server:
+        result = await server.direct_call_tool('get_client_info', {})
+        # When client_info is not set, the MCP library provides default client info
+        assert result is not None
+        assert result['name'] == 'mcp'
 
 
 async def test_agent_run_stream_with_mcp_server_http(allow_model_requests: None, model: Model):

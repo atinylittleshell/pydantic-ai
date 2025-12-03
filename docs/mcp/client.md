@@ -503,10 +503,9 @@ agent = Agent('openai:gpt-5', toolsets=[server])
 async def main():
     result = await agent.run('How many days between 2000-01-01 and 2025-03-18?')
     print(result.output)
-    #> There are 9,208 days between January 1, 2000, and March 18, 2025.
 ```
 
-1. The `client_info` parameter is sent to the MCP server as part of the `clientInfo` during initialization.
+The `client_info` parameter is sent to the MCP server as part of the `clientInfo` during initialization.
 
 When `client_info` is provided, it's sent to the server as an [Implementation](https://modelcontextprotocol.io/specification/2025-11-25/schema#implementation) object. If `client_info` is not specified, no client information is sent.
 
